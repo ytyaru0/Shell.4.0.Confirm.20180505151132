@@ -53,9 +53,9 @@ ConfirmQuestion(){
 # $2: 入力値(read)
 IsQuestionLoop(){
     local count=0
-    while [ $count -le ${#1} ]; do
+    while [ $count -lt ${#1} ]; do
         [ "$2" = "${1:$count:1}" ] && { echo 'true'; return; }
-        local count+=1
+        count=$((++count))
     done
     echo 'false'
 }
@@ -69,9 +69,9 @@ IsQuestionLoop(){
 _AnswerChars(){
     local count=0
     local chars='('
-    while [ $count -le ${#1} ]; do
+    while [ $count -lt ${#1} ]; do
         local chars+="${1:$count:1}/"
-        local count+=1
+        count=$((++count))
     done
     local chars=${chars%/}
     local chars+=")"
@@ -87,10 +87,12 @@ _AnswerChars(){
 _AnswerCharsLong(){
     local count=0
     local chars='('
+    echo $1
     while [ $count -lt ${#1} ]; do
+        echo "****** ${1:$count:1} $count"
         local label=${ConfirmLabels[${1:$count:1}]}
         local chars+='['${label:0:1}']'${label:1}' '
-        local count+=1
+        count=$((++count))
     done
     local chars=${chars% }
     local chars+=")"
@@ -151,11 +153,12 @@ Confirm() {
 #ConfirmYesNo "質問文1。"
 #ConfirmYesNo "質問文2。" && echo 'YES!!' || echo 'NO...'
 #ConfirmYesNo "質問文3。" "echo YES!!" "echo NO..." "echo ELSE"
-ConfirmYesNo "質問文3-1。" "echo YES!!" "echo NO..."
-Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo ELSE"
-Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
-Confirm oc "質問文oc。" "echo OK!!" "echo CANCEL..."
-Confirm o "質問文o。" "echo OK!!"
-#ConfirmYesNo "質問文4。" "echo はい" "echo いいえ" "echo どちらでもない"
-#a=`ConfirmYesNo "質問文。"`
-#echo $a
+ConfirmYesNoCancel "質問文YNC"
+[ $? -eq 0 ] && echo 'YES!!'
+[ $? -eq 1 ] && echo 'NO...'
+[ $? -eq 2 ] && echo 'Cancel'
+#ConfirmYesNo "質問文3-1。" "echo YES!!" "echo NO..."
+#Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo ELSE"
+#Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
+#Confirm oc "質問文oc。" "echo OK!!" "echo CANCEL..."
+#Confirm o "質問文o。" "echo OK!!"
