@@ -36,8 +36,6 @@ ConfirmQuestion(){
     local answer='InvalidValue'
     local method=_AnswerCharsLong
     [ "$3" = 'true' -o "$3" = 'short' ] && local method=_AnswerChars
-    #echo -n "$1 `_AnswerChars $1`: "
-    #local ansChars=`_AnswerCharsLong $1`
     local ansChars=`$method $1`
     local isLoop='false'
     while [ 'false' = "$isLoop" ]; do
@@ -46,7 +44,7 @@ ConfirmQuestion(){
         echo ''
         local isLoop=`IsQuestionLoop "$1" "$answer"`
     done
-    #echo $answer
+    echo "*********** answer: $answer ${ConfirmCodes[$answer]}"
     return ${ConfirmCodes[$answer]}
 }
 # $1: o,oc,yn,ync
@@ -55,7 +53,6 @@ IsQuestionLoop(){
     local count=0
     while [ $count -lt ${#1} ]; do
         [ "$2" = "${1:$count:1}" ] && { echo 'true'; return; }
-        #count=$((++count))
         ((count++))
     done
     echo 'false'
@@ -72,7 +69,6 @@ _AnswerChars(){
     local chars='('
     while [ $count -lt ${#1} ]; do
         local chars+="${1:$count:1}/"
-        #count=$((++count))
         ((count++))
     done
     local chars=${chars%/}
@@ -91,10 +87,8 @@ _AnswerCharsLong(){
     local chars='('
     echo $1
     while [ $count -lt ${#1} ]; do
-        echo "****** ${1:$count:1} $count"
         local label=${ConfirmLabels[${1:$count:1}]}
         local chars+='['${label:0:1}']'${label:1}' '
-        #count=$((++count))
         ((count++))
     done
     local chars=${chars% }
@@ -112,6 +106,7 @@ ConfirmYesNo() {
 ConfirmYesNoCancel() {
     ConfirmQuestion ync $1
     local answer=$?
+    echo "=========== $answer ${ConfirmCodes[n]} ${ConfirmCodes[c]}"
     [ $# -lt 2 ] && { return $answer; }
     [ "$2" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $2; return $answer; }
     [ "$3" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $3; return $answer; }
@@ -157,9 +152,10 @@ Confirm() {
 #ConfirmYesNo "質問文2。" && echo 'YES!!' || echo 'NO...'
 #ConfirmYesNo "質問文3。" "echo YES!!" "echo NO..." "echo ELSE"
 ConfirmYesNoCancel "質問文YNC"
-[ $? -eq 0 ] && echo 'YES!!'
-[ $? -eq 1 ] && echo 'NO...'
-[ $? -eq 2 ] && echo 'Cancel'
+a=$?
+[ $a -eq 0 ] && echo 'YES!!'
+[ $a -eq 1 ] && echo 'NO...'
+[ $a -eq 2 ] && echo 'Cancel'
 #ConfirmYesNo "質問文3-1。" "echo YES!!" "echo NO..."
 #Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo ELSE"
 #Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
