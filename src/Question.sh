@@ -87,8 +87,7 @@ _AnswerChars(){
 _AnswerCharsLong(){
     local count=0
     local chars='('
-    while [ $count -le ${#1} ]; do
-        # +++++++++++++++
+    while [ $count -lt ${#1} ]; do
         local label=${ConfirmLabels[${1:$count:1}]}
         local chars+='['${label:0:1}']'${label:1}' '
         local count+=1
