@@ -5,8 +5,8 @@
 #   Cancel: 中断する
 # 質問ループ
 #   所定の入力値以外だったときの対応
-#   * 質問をくりかえす（selectコマンドと同様）
-#   * 所定の値を返して終了（やらない。簡易化のため）
+#   * 質問をくりかえす
+#   * 所定の値を返して終了
 [ -z "$ConfirmLabels" -a "${ConfirmLabels:-A}"="${ConfirmLabels-A}" ] && { declare -A ConfirmLabels; }
 [ -z "$ConfirmMethods" -a "${ConfirmMethods:-A}"="${ConfirmMethods-A}" ] && { declare -A ConfirmMethods; }
 [ -z "$ConfirmCodes" -a "${ConfirmCodes:-A}"="${ConfirmCodes-A}" ] && { declare -A ConfirmCodes; }
@@ -25,20 +25,16 @@ ConfirmMethods[c]="echo Cancell..."
 # 確認表示と入力のループ
 #   選択肢が指定値以外のときはループする。
 #   `select`コマンドと同様の振る舞い。
-# $1 回答タイプ o,oc,yn,ync
+# $1 質問タイプ o,oc,yn,ync
 # $2 質問文
-# $3 回答タイプの表示を短くするか否か (default:false)
 ConfirmQuestion(){
     case "$1" in
         'o' | 'oc' | 'yn' | 'ync') ;;
         *) { echo 'o,oc,yn,yncのいずれかにしてください。'; exit 1; } ;;
     esac
     local answer='InvalidValue'
-    local method=_AnswerCharsLong
-    [ "$3" = 'true' -o "$3" = 'short' ] && local method=_AnswerChars
     #echo -n "$1 `_AnswerChars $1`: "
-    #local ansChars=`_AnswerCharsLong $1`
-    local ansChars=`$method $1`
+    local ansChars=`_AnswerCharsLong $1`
     local isLoop='false'
     while [ 'false' = "$isLoop" ]; do
         echo -n "$2 $ansChars: "
@@ -131,18 +127,16 @@ ConfirmOk() {
     echo
 }
 # 確認フォーム
-# $1  : 選択肢(o,oc,yn,ync)
-# $2  : 質問文
-# $3..: 回答後実行内容
+# $1: 選択肢(o,oc,yn,ync)
+# $2: 質問文
+# $3: 回答後実行内容
 Confirm() {
     ConfirmQuestion $1 $2
     local answer=$?
-    [ $# -lt 3 ] && { return $answer; }
-    [ "$3" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $3; return $answer; }
-    [ "$3" != '' -a $answer -eq ${ConfirmCodes[o]} ] && { $3; return $answer; }
-    [ "$4" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $4; return $answer; }
+    [ $# -lt 2 ] && { return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $2; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $3; return $answer; }
     [ "$4" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $4; return $answer; }
-    [ "$5" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $5; return $answer; }
     echo $answer
 }
 #a=`IsQuestionLoop yn y`
@@ -152,10 +146,6 @@ Confirm() {
 #ConfirmYesNo "質問文2。" && echo 'YES!!' || echo 'NO...'
 #ConfirmYesNo "質問文3。" "echo YES!!" "echo NO..." "echo ELSE"
 ConfirmYesNo "質問文3-1。" "echo YES!!" "echo NO..."
-Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo ELSE"
-Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
-Confirm oc "質問文oc。" "echo OK!!" "echo CANCEL..."
-Confirm o "質問文o。" "echo OK!!"
 #ConfirmYesNo "質問文4。" "echo はい" "echo いいえ" "echo どちらでもない"
 #a=`ConfirmYesNo "質問文。"`
 #echo $a
