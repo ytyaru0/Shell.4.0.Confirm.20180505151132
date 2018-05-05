@@ -55,7 +55,8 @@ IsQuestionLoop(){
     local count=0
     while [ $count -lt ${#1} ]; do
         [ "$2" = "${1:$count:1}" ] && { echo 'true'; return; }
-        count=$((++count))
+        #count=$((++count))
+        ((count++))
     done
     echo 'false'
 }
@@ -71,7 +72,8 @@ _AnswerChars(){
     local chars='('
     while [ $count -lt ${#1} ]; do
         local chars+="${1:$count:1}/"
-        count=$((++count))
+        #count=$((++count))
+        ((count++))
     done
     local chars=${chars%/}
     local chars+=")"
@@ -92,7 +94,8 @@ _AnswerCharsLong(){
         echo "****** ${1:$count:1} $count"
         local label=${ConfirmLabels[${1:$count:1}]}
         local chars+='['${label:0:1}']'${label:1}' '
-        count=$((++count))
+        #count=$((++count))
+        ((count++))
     done
     local chars=${chars% }
     local chars+=")"
