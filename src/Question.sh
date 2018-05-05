@@ -22,12 +22,11 @@ ConfirmMethods[y]="echo YES!!"
 ConfirmMethods[n]="echo No..."
 ConfirmMethods[o]="echo OK!!"
 ConfirmMethods[c]="echo Cancell..."
-Confirm() {
-    echo "$1"
-}
+# 確認表示と入力のループ
+#   選択肢が指定値以外のときはループする。
+#   `select`コマンドと同様の振る舞い。
 # $1 質問タイプ o,oc,yn,ync
 # $2 質問文
-# 選択肢が指定値以外のときはループする。(`select`コマンドと同様の振る舞い)
 ConfirmQuestion(){
     case "$1" in
         'o' | 'oc' | 'yn' | 'ync') ;;
@@ -48,17 +47,6 @@ ConfirmQuestion(){
 }
 # $1: o,oc,yn,ync
 # $2: 入力値(read)
-#IsQuestionLoop(){
-#    echo "$1" | awk -v FS='' '{
-#        for (i = 1; i <= NF; i++) {
-#            if ($i == $2) { print 'true'; }
-#        }
-#        print 'false';
-#    }'
-#}
-
-# $1: o,oc,yn,ync
-# $2: 入力値(read)
 IsQuestionLoop(){
     local count=0
     while [ $count -le ${#1} ]; do
@@ -67,6 +55,7 @@ IsQuestionLoop(){
     done
     echo 'false'
 }
+# 入力値の表示
 # $1: o,oc,yn,ync
 # echo:
 #   (o)
@@ -84,6 +73,7 @@ _AnswerChars(){
     local chars+=")"
     echo "$chars"
 }
+# 入力値の表示（長め）
 # $1: o,oc,yn,ync
 # echo:
 #   ([o]k)
@@ -104,49 +94,58 @@ _AnswerCharsLong(){
 }
 ConfirmYesNo() {
     ConfirmQuestion yn $1
-    [ $# -lt 2 ] && { return $?; }
-    [ $# -lt 2 ] && {
-        [ $? -eq ${ConfirmCodes[y]} ] && { return $?; }
-        [ $? -eq ${ConfirmCodes[n]} ] && { return $?; }
-        [ 'n' = "$answer" ] && { return 1; }
-        { return 2;}
-    }
-    [ "$2" != '' -a  $? -eq ${ConfirmCodes[y]} ] && { $2; return $?; }
-    [ "$3" != '' -a  $? -eq ${ConfirmCodes[n]} ] && { $3; return $?; }
-    echo $?
-    
-    #local answer=`ConfirmQuestion yn $1`
-    #[ $# -lt 2 ] && {
-    #    [ 'y' = "$answer" ] && { return 0; }
-    #    [ 'n' = "$answer" ] && { return 1; }
-    #    { return 2;}
-    #}
-    #[ "$2" != '' -a 'y' = "$answer" ] && { $2; return; }
-    #[ "$3" != '' -a 'n' = "$answer" ] && { $3; return; }
-    #[ "$4" != '' ] && { $4; return; }
-    #echo $answer
+    local answer=$?
+    [ $# -lt 2 ] && { return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $2; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $3; return $answer; }
+    echo $answer
 }
 ConfirmYesNoCancel() {
-    echo "$1 (y/n)"
-    local answer
-    read answer
+    ConfirmQuestion ync $1
+    local answer=$?
+    [ $# -lt 2 ] && { return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $2; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $3; return $answer; }
+    [ "$4" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $4; return $answer; }
+    echo $answer
 }
 ConfirmOkCancel() {
+    ConfirmQuestion oc $1
+    local answer=$?
+    [ $# -lt 2 ] && { return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[o]} ] && { $2; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $3; return $answer; }
+    echo $answer
     echo
 }
-# 質問フォーム
-# $1: 質問文
-# $2: 選択肢
+ConfirmOk() {
+    ConfirmQuestion oc $1
+    local answer=$?
+    [ $# -lt 2 ] && { return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[o]} ] && { $2; return $answer; }
+    echo $answer
+    echo
+}
+# 確認フォーム
+# $1: 選択肢(o,oc,yn,ync)
+# $2: 質問文
 # $3: 回答後実行内容
-QuestionYesNo() {
-    echo $1
+Confirm() {
+    ConfirmQuestion $1 $2
+    local answer=$?
+    [ $# -lt 2 ] && { return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $2; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $3; return $answer; }
+    [ "$4" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $4; return $answer; }
+    echo $answer
 }
 #a=`IsQuestionLoop yn y`
 #echo $a
 #ConfirmQuestion yn 質問A
-ConfirmYesNo "質問文1。"
+#ConfirmYesNo "質問文1。"
 #ConfirmYesNo "質問文2。" && echo 'YES!!' || echo 'NO...'
 #ConfirmYesNo "質問文3。" "echo YES!!" "echo NO..." "echo ELSE"
+ConfirmYesNo "質問文3-1。" "echo YES!!" "echo NO..."
 #ConfirmYesNo "質問文4。" "echo はい" "echo いいえ" "echo どちらでもない"
 #a=`ConfirmYesNo "質問文。"`
 #echo $a
