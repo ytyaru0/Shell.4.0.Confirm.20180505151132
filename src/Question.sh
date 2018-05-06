@@ -31,16 +31,20 @@ ConfirmMethods[c]="echo Cancell..."
 ConfirmQuestion(){
     case "$1" in
         'o' | 'oc' | 'yn' | 'ync') ;;
-        *) { echo 'o,oc,yn,yncのいずれかにしてください。'; exit 1; } ;;
+        'o-' | 'oc-' | 'yn-' | 'ync-') ;;
+        *) { echo 'o,oc,yn,ync,のいずれかにしてください。または末尾に"-"を付与できます（短文化）。'; exit 1; } ;;
     esac
     local answer='InvalidValue'
-    local method=_AnswerCharsLong
-    [ "$3" = 'true' -o "$3" = 'short' ] && local method=_AnswerChars
-    local ansChars=`$method $1`
+    #local method=_AnswerCharsLong
+    #[ "$3" = 'true' -o "$3" = 'short' ] && local method=_AnswerChars
+    #local ansChars=`$method $1`
+    local ansChars=`_AnswerChars $1`
     local isLoop='false'
     while [ 'false' = "$isLoop" ]; do
         echo -n "$2 $ansChars: "
         read -n 1 answer
+        # ESCキー押下で異常終了 (矢印、F1キー等でも終了してしまう）
+        #[[ $'\e' == "$answer" ]] && { echo 'Escape'; exit 255; }
         echo ''
         local isLoop=`IsQuestionLoop "$1" "$answer"`
     done
@@ -57,6 +61,16 @@ IsQuestionLoop(){
     done
     echo 'false'
 }
+_AnswerChars(){
+    #local last=${1:`expr ${#1} - 1`}
+    local lastIdx=`expr ${#1} - 1`
+    local last="${1:$lastIdx}"
+    if [ '-' = "$last" ]; then
+        _AnswerCharsShort "${1:0:lastIdx}"
+    else
+        _AnswerCharsLong "${1}"
+    fi
+}
 # 入力値の表示
 # $1: o,oc,yn,ync
 # echo:
@@ -64,7 +78,7 @@ IsQuestionLoop(){
 #   (o/c)
 #   (y/n)
 #   (y/n/c)
-_AnswerChars(){
+_AnswerCharsShort(){
     local count=0
     local chars='('
     while [ $count -lt ${#1} ]; do
@@ -157,6 +171,10 @@ a=$?
 [ $a -eq 1 ] && echo 'NO...'
 [ $a -eq 2 ] && echo 'Cancel'
 ConfirmYesNoCancel "質問文3-1。" "echo YES!!" "echo NO..." "echo Cancel"
+Confirm ync- "質問文ync-。" "echo YES!!" "echo NO..." "echo Cancel"
+Confirm yn- "質問文yn-。" "echo YES!!" "echo NO..."
+Confirm oc- "質問文oc-。" "echo OK!!" "echo CANCEL..."
+Confirm o- "質問文o-。" "echo OK!!"
 Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo Cancel"
 Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
 Confirm oc "質問文oc。" "echo OK!!" "echo CANCEL..."
