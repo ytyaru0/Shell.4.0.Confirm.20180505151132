@@ -44,7 +44,7 @@ ConfirmQuestion(){
         echo ''
         local isLoop=`IsQuestionLoop "$1" "$answer"`
     done
-    echo "*********** answer: $answer ${ConfirmCodes[$answer]}"
+    #echo "*********** answer: $answer ${ConfirmCodes[$answer]}"
     return ${ConfirmCodes[$answer]}
 }
 # $1: o,oc,yn,ync
@@ -85,7 +85,7 @@ _AnswerChars(){
 _AnswerCharsLong(){
     local count=0
     local chars='('
-    echo $1
+    #echo $1
     while [ $count -lt ${#1} ]; do
         local label=${ConfirmLabels[${1:$count:1}]}
         local chars+='['${label:0:1}']'${label:1}' '
@@ -106,7 +106,7 @@ ConfirmYesNo() {
 ConfirmYesNoCancel() {
     ConfirmQuestion ync $1
     local answer=$?
-    echo "=========== $answer ${ConfirmCodes[n]} ${ConfirmCodes[c]}"
+    #echo "=========== $answer ${ConfirmCodes[n]} ${ConfirmCodes[c]}"
     [ $# -lt 2 ] && { return $answer; }
     [ "$2" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $2; return $answer; }
     [ "$3" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $3; return $answer; }
@@ -141,8 +141,8 @@ Confirm() {
     [ "$3" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $3; return $answer; }
     [ "$3" != '' -a $answer -eq ${ConfirmCodes[o]} ] && { $3; return $answer; }
     [ "$4" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $4; return $answer; }
-    [ "$4" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $4; return $answer; }
-    [ "$5" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $5; return $answer; }
+    [ $# -eq 4 -a "$4" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $4; return $answer; }
+    [ $# -eq 5 -a  "$5" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $5; return $answer; }
     echo $answer
 }
 #a=`IsQuestionLoop yn y`
@@ -156,8 +156,8 @@ a=$?
 [ $a -eq 0 ] && echo 'YES!!'
 [ $a -eq 1 ] && echo 'NO...'
 [ $a -eq 2 ] && echo 'Cancel'
-#ConfirmYesNo "質問文3-1。" "echo YES!!" "echo NO..."
-#Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo ELSE"
-#Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
-#Confirm oc "質問文oc。" "echo OK!!" "echo CANCEL..."
-#Confirm o "質問文o。" "echo OK!!"
+ConfirmYesNoCancel "質問文3-1。" "echo YES!!" "echo NO..." "echo Cancel"
+Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo Cancel"
+Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
+Confirm oc "質問文oc。" "echo OK!!" "echo CANCEL..."
+Confirm o "質問文o。" "echo OK!!"
