@@ -61,12 +61,7 @@ ConfirmQuestion(){
     done
     #echo "*********** answer: $answer ${ConfirmCodes[$answer]}"
     echo "$answer"
-    #echo `expr length \( $1 : "\(.*\)$answer" \)`
-    #echo `expr length \( $1 : '\(.*\)'"$answer"'' \)`
-    #echo `expr length \( $1 : '\(.*\)$answer' \)`
-    # $1の文字列インデックス値(ync-でcを入力したら2を返す)
-    return `expr length \( $1 : "\(.*\)$answer" \)`
-    #return ${ConfirmCodes[$answer]}
+    return ${ConfirmCodes[$answer]}
 }
 # 確認タイプ文字列の妥当性確認
 # $1 o,oc,yn,ync
@@ -78,11 +73,10 @@ IsValidAnswerChars() {
     local chars=$1
     [ '-' = "$last" ] && chars="${1:0:lastIdx}"
     # 小文字化
-    chars=${chars,,}
-    #echo $chars
+    chars=${chars,}
     case "$chars" in
         'o' | 'oc' | 'yn' | 'ync') ;;
-        *) { decho 'o,oc,yn,ync,のいずれかにしてください。または末尾に"-"を付与できます（短文化）。'; exit 1; } ;;
+        *) { echo 'o,oc,yn,ync,のいずれかにしてください。または末尾に"-"を付与できます（短文化）。'; exit 1; } ;;
     esac
 }
 # $1: o,oc,yn,ync
@@ -147,8 +141,8 @@ ConfirmYesNo() {
     ConfirmQuestion yn $1
     local answer=$?
     [ $# -lt 2 ] && { return $answer; }
-    [ "$2" != '' -a $answer -eq 0 ] && { $2; return $answer; }
-    [ "$3" != '' -a $answer -eq 1 ] && { $3; return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $2; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $3; return $answer; }
     echo $answer
 }
 ConfirmYesNoCancel() {
@@ -156,17 +150,17 @@ ConfirmYesNoCancel() {
     local answer=$?
     #echo "=========== $answer ${ConfirmCodes[n]} ${ConfirmCodes[c]}"
     [ $# -lt 2 ] && { return $answer; }
-    [ "$2" != '' -a $answer -eq 0 ] && { $2; return $answer; }
-    [ "$3" != '' -a $answer -eq 1 ] && { $3; return $answer; }
-    [ "$4" != '' -a $answer -eq 2 ] && { $4; return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $2; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $3; return $answer; }
+    [ "$4" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $4; return $answer; }
     echo $answer
 }
 ConfirmOkCancel() {
     ConfirmQuestion oc $1
     local answer=$?
     [ $# -lt 2 ] && { return $answer; }
-    [ "$2" != '' -a $answer -eq 0 ] && { $2; return $answer; }
-    [ "$3" != '' -a $answer -eq 1 ] && { $3; return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[o]} ] && { $2; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $3; return $answer; }
     echo $answer
     echo
 }
@@ -174,7 +168,7 @@ ConfirmOk() {
     ConfirmQuestion oc $1
     local answer=$?
     [ $# -lt 2 ] && { return $answer; }
-    [ "$2" != '' -a $answer -eq 0 ] && { $2; return $answer; }
+    [ "$2" != '' -a $answer -eq ${ConfirmCodes[o]} ] && { $2; return $answer; }
     echo $answer
     echo
 }
@@ -183,44 +177,15 @@ ConfirmOk() {
 # $2  : 質問文
 # $3..: 回答後実行内容
 Confirm() {
-    [ $# -lt 2 ] && { _ConfirmHelp; return 255; }
-    local char=`ConfirmQuestion $1 $2`
-    local code=$?
-    [ 2 -lt $# -a "$3" != '' -a $code -eq 0 ] && { $3; return $code; }
-    [ $# -eq 4 -a "$4" != '' -a $code -eq 1 ] && { $4; return $code; }
-    [ $# -eq 5 -a  "$5" != '' -a $code -eq 2 ] && { $5; return $code; }
-    echo $char
-    return $code
-}
-_ConfirmHelp() {
-    decho '引数エラー: Confirm type message [action ...]'
-    decho '===== 引数 ====='
-    decho '引数は最低でも2つ必要。3つ目からの[action]は任意。'
-    decho '[action]: 回答後に実行する1文を文字列で与える。[type]の位置順序に対応。'
-    decho '[type]: o,oc,yn,ync (OK,Cancel,Yes,No)'
-    decho '  * 各値は大文字にすることも可'
-    decho '  * 末尾に-を付与すると表示を短文化できる'
-    decho '例1) Confirm yN どうする？'
-    decho '  どうする？ ([y]es [N]o): '
-    decho '例2) Confirm ync- どうする？'
-    decho '  どうする？ (y/n/c): '
-    decho '例3) Confirm oc- 実行する？ "echo OK!" "echo Cancel..."'
-    decho '  実行する？ (o/c): o'
-    decho '  OK!'
-    decho '===== 返り値 ====='
-    decho '  echo: [type]の文字列のうち入力した文字'
-    decho '    例4) ans=`Confirm yN- どうする？`'
-    decho '         [ "y" = "$ans" ] && echo Yes!!'
-    decho '         [ "N" = "$ans" ] && echo No...'
-    decho '  return: [type]の文字列のうち入力した文字のインデックス値'
-    decho '    0: Yes or Ok'
-    decho '    1: No or Cancel'
-    decho '    2: Cancel'
-    decho '    例5) Confirm yN- どうする？'
-    decho '         ret=$?'
-    decho '         [ 0 -eq $ret ] && { echo Yes!!; return $ret; }'
-    decho '         [ 1 -eq $ret ] && { echo No...; return $ret; }'
-
+    ConfirmQuestion $1 $2
+    local answer=$?
+    [ $# -lt 3 ] && { return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[y]} ] && { $3; return $answer; }
+    [ "$3" != '' -a $answer -eq ${ConfirmCodes[o]} ] && { $3; return $answer; }
+    [ "$4" != '' -a $answer -eq ${ConfirmCodes[n]} ] && { $4; return $answer; }
+    [ $# -eq 4 -a "$4" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $4; return $answer; }
+    [ $# -eq 5 -a  "$5" != '' -a $answer -eq ${ConfirmCodes[c]} ] && { $5; return $answer; }
+    echo $answer
 }
 #a=`IsQuestionLoop yn y`
 #echo $a
@@ -228,11 +193,6 @@ _ConfirmHelp() {
 #ConfirmYesNo "質問文1。"
 #ConfirmYesNo "質問文2。" && echo 'YES!!' || echo 'NO...'
 #ConfirmYesNo "質問文3。" "echo YES!!" "echo NO..." "echo ELSE"
-Confirm 
-a=`Confirm Yn- "質問文Yn-"`
-ret=$?
-echo "入力値: $a $ret"
-Confirm yN- "質問文yN。" "echo YES!!" "echo NO..."
 ConfirmYesNoCancel "質問文YNC"
 a=$?
 [ $a -eq 0 ] && echo 'YES!!'
