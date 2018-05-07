@@ -42,7 +42,10 @@ ret=`func`
 [ 'A' = "$ret" ] && echo OK!
 ```
 
-`func`として呼び出してしまうと、戻り値ではなく画面に表示されてしまう。
+* `func`として呼び出してしまうと、戻り値ではなく画面に表示されてしまう
+* 戻り値にしたくないものは`1>&2`で`stderr`に出力する
+    * 懸念：エラーメッセージでもないものを`stderr`に出力するのは好ましくないか
+    * https://qiita.com/laikuaut/items/e1cc312ffc7ec2c872fc
 
 ### echo+return
 
@@ -51,77 +54,14 @@ func(){
     echo 'Z' 1>&2
     echo 'A'
     echo 'Z' 1>&2
+    return 128
 }
 
 ret=`func`
-[ 'A' = "$ret" ] && echo OK!
+code=$?
+echo "code=$code ret=$ret"
+[ 'A' = "$ret" -a 128 -eq $code ] && echo OK!
 ```
 
-## 問題
-
-### return,echo
-
-数値`128`、文字列`A`を戻り値とする意図のコード。
-
-```sh
-func(){
-    echo 'A'
-    return 128
-}
-```
-
-`return`,`echo`の両方に対応すべく上記のようにすると、`func`で呼び出したとき、`A`が画面に表示されてしまう。
-
-どちらかに絞るべき。
-
-#### 呼出
-
-##### return
-
-```sh
-func
-ret=$?
-echo "ret=$ret"
-```
-
-画面に戻り値が表示されてしまう。(`echo 'A'`)
-
-##### echo
-
-```
-a=`func`
-ret=$?
-echo "echo=$a ret=$ret"
-```
-
-`echo 'A'`の出力結果`A`は画面に表示されず、変数`a`に代入される。
-
-### echoの戻り値と表示
-
-画面に表示したいが戻り値にはしたくない場合どうするか。
-
-#### stderr
-
-`stdout`と`stderr`を使い分けることで対応できる。
-
-```bash
-func(){
-    echo 'stderr' 1>&2
-    echo 'A'
-    return 128
-}
-a=`func`
-[ 'A' = "$a" ] && echo OK!
-```
-
-文字列|画面表示|戻り値
-------|--------|------
-`stderr`|o|x
-`A`|x|o
-
-`1>&2`がポイント。`1`は`stdout`, `2`は`stderr`, `>`はリダイレクト, `&`はアドレス？
-
-懸念：エラーメッセージでもないものを`stderr`に出力するのは好ましくないかもしれない。
-
-https://qiita.com/laikuaut/items/e1cc312ffc7ec2c872fc
+`func`として呼び出してしまうと、戻り値ではなく画面に表示されてしまう。
 

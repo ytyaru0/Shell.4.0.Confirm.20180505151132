@@ -217,3 +217,21 @@ Confirm
 #ret=$?
 #echo "入力値: $a $ret"
 Confirm yN- "質問文yN。" "echo YES!!" "echo NO..."
+ConfirmYesNoCancel "質問文YNC"
+a=$?
+[ $a -eq 0 ] && echo 'YES!!'
+[ $a -eq 1 ] && echo 'NO...'
+[ $a -eq 2 ] && echo 'Cancel'
+ConfirmYesNoCancel "質問文3-1。" "echo YES!!" "echo NO..." "echo Cancel"
+Confirm ync- "質問文ync-。" "echo YES!!" "echo NO..." "echo Cancel"
+Confirm yn- "質問文yn-。" "echo YES!!" "echo NO..."
+Confirm oc- "質問文oc-。" "echo OK!!" "echo CANCEL..."
+Confirm o- "質問文o-。" "echo OK!!"
+Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo Cancel"
+Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
+Confirm oc "質問文oc。" "echo OK!!" "echo CANCEL..."
+Confirm o "質問文o。" "echo OK!!"
+#Confirm o "質問文o複数行実行文。" "{ echo 'OK1!!'; echo 'OK2!!'}"
+Confirm o "質問文o複数行実行。"
+a=$?
+[ $a -eq 0 ] && { echo 'OK1!!'; echo 'OK2!!'; }
