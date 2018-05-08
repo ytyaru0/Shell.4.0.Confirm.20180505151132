@@ -1,4 +1,10 @@
 . $(cd $(dirname $0); pwd)/Question.sh
+ConfirmYesNoCancel "しつもん" "echo YES!!" "echo NO..." "{ echo Cancel; echo 2; }"
+a=$?
+echo "return $a"
+ConfirmOk "ConfirmOk 質問文。" "echo OK!"
+a=$?
+echo "return $a"
 Confirm YNC "質問文YNC。" "{ echo YES!!; echo 2; }" "{ echo NO...; echo 2; }" "{ echo Cancel; echo 2; }"
 a=$?
 echo "return $a"

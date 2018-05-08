@@ -1,16 +1,30 @@
 #----------------------------------------------------------
 # 確認 Confirm type message [action ...]
 # 例) Confirm Yn- 質問文 "{ echo Y; echo ES; }" "{ echo N; echo O; }"
-# 詳細はヘルプ参照（Confirm を実行すれば表示される）
+# type: o,oc,yn,ync
+#   YES/OK: 許可する
+#   NO    : 許可しない
+#   Cancel: 中断する
+#   末尾- : 短文化
+# 質問ループ
+#   所定の入力値以外だったときの対応
+#   * 質問をくりかえす（selectコマンドと同様）
+#   * 所定の値を返して終了（やらない。簡易化のため）
 #----------------------------------------------------------
+decho() { echo "$1" 1>&2; }
+dechon() { echo -n "$1" 1>&2; }
 # 確認表示と入力のループ
-#   選択肢が指定値以外のときはループする(`select`コマンドと同様)
+#   選択肢が指定値以外のときはループする。
+#   `select`コマンドと同様の振る舞い。
 # $1 回答タイプ o,oc,yn,ync
 # $2 質問文
-# return: 0..2
-#   0: OK/YES
-#   1: NO
-#   2: Cancel
+# $3 回答タイプの表示を短くするか否か (default:false)
+# 戻り値
+#   return
+#     0: OK/YES
+#     1: NO
+#     2: Cancel
+#   echo: $1のうちreadで入力された1文字
 _ConfirmQuestion(){
     _IsValidAnswerChars "$1"
     local answer='InvalidValue'
@@ -79,7 +93,11 @@ _AnswerCharsShort(){
 }
 # 入力値の表示（長め）
 # $1: o,oc,yn,ync
-# echo:([o]k), ([o]k [c]ancel), ([y]es [n]o), ([y]es [n]o [c]ancel)
+# echo:
+#   ([o]k)
+#   ([o]k [c]ancel)
+#   ([y]es [n]o)
+#   ([y]es [n]o [c]ancel)
 _AnswerCharsLong(){
     local count=0
     local chars='('
