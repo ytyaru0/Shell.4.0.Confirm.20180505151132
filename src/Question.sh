@@ -1,17 +1,16 @@
-# 確認
-# YES(OK),No,Cancel
+#----------------------------------------------------------
+# 確認 Confirm type message [action ...]
+# 例) Confirm Yn- 質問文 "{ echo Y; echo ES; }" "{ echo N; echo O; }"
+# type: o,oc,yn,ync
 #   YES/OK: 許可する
 #   NO    : 許可しない
 #   Cancel: 中断する
+#   末尾- : 短文化
 # 質問ループ
 #   所定の入力値以外だったときの対応
 #   * 質問をくりかえす（selectコマンドと同様）
 #   * 所定の値を返して終了（やらない。簡易化のため）
-[ -z "$ConfirmLabels" -a "${ConfirmLabels:-A}"="${ConfirmLabels-A}" ] && { declare -A ConfirmLabels; }
-ConfirmLabels[y]=yes
-ConfirmLabels[n]=no
-ConfirmLabels[o]=ok
-ConfirmLabels[c]=cancel
+#----------------------------------------------------------
 decho() { echo "$1" 1>&2; }
 dechon() { echo -n "$1" 1>&2; }
 # 確認表示と入力のループ
@@ -26,8 +25,8 @@ dechon() { echo -n "$1" 1>&2; }
 #     1: NO
 #     2: Cancel
 #   echo: $1のうちreadで入力された1文字
-ConfirmQuestion(){
-    IsValidAnswerChars "$1"
+_ConfirmQuestion(){
+    _IsValidAnswerChars "$1"
     local answer='InvalidValue'
     local ansChars=`_AnswerChars $1`
     local isLoop='false'
@@ -37,9 +36,8 @@ ConfirmQuestion(){
         # ESCキー押下で異常終了 (矢印、F1キー等でも終了してしまう）
         #[[ $'\e' == "$answer" ]] && { echo 'Escape'; exit 255; }
         decho ''
-        local isLoop=`IsQuestionLoop "$1" "$answer"`
+        local isLoop=`_IsQuestionLoop "$1" "$answer"`
     done
-    #echo "*********** answer: $answer ${ConfirmCodes[$answer]}"
     #[ 1 -eq $isEcho ] && echo "$answer"
     # $1の文字列インデックス値(ync-でcを入力したら2を返す)
     return `expr length \( $1 : "\(.*\)$answer" \)`
@@ -48,7 +46,7 @@ ConfirmQuestion(){
 # $1 o,oc,yn,ync
 #    末尾にハイフン-が付いている場合もOK
 #    各文字は大文字小文字どちらでもOK（入力要求値になる）
-IsValidAnswerChars() {
+_IsValidAnswerChars() {
     local lastIdx=`expr ${#1} - 1`
     local last="${1:$lastIdx}"
     local chars="$1"
@@ -62,7 +60,7 @@ IsValidAnswerChars() {
 }
 # $1: o,oc,yn,ync
 # $2: 入力値(read)
-IsQuestionLoop(){
+_IsQuestionLoop(){
     local count=0
     while [ $count -lt ${#1} ]; do
         [ "$2" = "${1:$count:1}" ] && { echo 'true'; return; }
@@ -81,11 +79,7 @@ _AnswerChars(){
 }
 # 入力値の表示
 # $1: o,oc,yn,ync
-# echo:
-#   (o)
-#   (o/c)
-#   (y/n)
-#   (y/n/c)
+# echo: (o),(o/c),(y/n),(y/n/c)
 _AnswerCharsShort(){
     local count=0
     local chars='('
@@ -108,16 +102,24 @@ _AnswerCharsLong(){
     local count=0
     local chars='('
     while [ $count -lt ${#1} ]; do
-        local label=${ConfirmLabels[${1:$count:1}]}
-        local chars+='['${label:0:1}']'${label:1}' '
+        local chars+='['${1:$count:1}']'`_GetAnswerCharsLabel "${1:$count:1}"`' '
         ((count++))
     done
     local chars=${chars% }
     local chars+=")"
     echo "$chars"
 }
+_GetAnswerCharsLabel(){
+    case "$1" in
+        'y' | 'Y' ) echo 'es' ;;
+        'n' | 'N' ) echo 'o' ;;
+        'o' | 'O' ) echo 'k' ;;
+        'c' | 'C' ) echo 'ancel' ;;
+        * ) { decho "y,n,o,cのいずれかのみ有効です。: $1"; exit 255; };;
+    esac
+}
 ConfirmYesNo() {
-    ConfirmQuestion yn $1
+    _ConfirmQuestion yn $1
     local answer=$?
     [ $# -lt 2 ] && { return $answer; }
     [ "$2" != '' -a $answer -eq 0 ] && { $2; return $answer; }
@@ -125,9 +127,8 @@ ConfirmYesNo() {
     echo $answer
 }
 ConfirmYesNoCancel() {
-    ConfirmQuestion ync $1
+    _ConfirmQuestion ync $1
     local answer=$?
-    #echo "=========== $answer ${ConfirmCodes[n]} ${ConfirmCodes[c]}"
     [ $# -lt 2 ] && { return $answer; }
     [ "$2" != '' -a $answer -eq 0 ] && { $2; return $answer; }
     [ "$3" != '' -a $answer -eq 1 ] && { $3; return $answer; }
@@ -135,7 +136,7 @@ ConfirmYesNoCancel() {
     echo $answer
 }
 ConfirmOkCancel() {
-    ConfirmQuestion oc $1
+    _ConfirmQuestion oc $1
     local answer=$?
     [ $# -lt 2 ] && { return $answer; }
     [ "$2" != '' -a $answer -eq 0 ] && { $2; return $answer; }
@@ -144,7 +145,7 @@ ConfirmOkCancel() {
     echo
 }
 ConfirmOk() {
-    ConfirmQuestion oc $1
+    _ConfirmQuestion oc $1
     local answer=$?
     [ $# -lt 2 ] && { return $answer; }
     [ "$2" != '' -a $answer -eq 0 ] && { $2; return $answer; }
@@ -157,14 +158,11 @@ ConfirmOk() {
 # $3..: 回答後実行内容
 Confirm() {
     [ $# -lt 2 ] && { _ConfirmHelp; return 255; }
-    #local char=`ConfirmQuestion $1 $2`
-    #echo "code=$code"
-    ConfirmQuestion $1 $2
+    _ConfirmQuestion $1 $2
     local code=$?
-    [ 2 -lt $# -a "$3" != '' -a $code -eq 0 ] && { $3; return $code; }
-    [ $# -eq 4 -a "$4" != '' -a $code -eq 1 ] && { $4; return $code; }
-    [ $# -eq 5 -a  "$5" != '' -a $code -eq 2 ] && { $5; return $code; }
-    #echo $char
+    [ 2 -lt $# -a "$3" != '' -a $code -eq 0 ] && { eval "$3"; return $code; }
+    [ 3 -lt $# -a "$4" != '' -a $code -eq 1 ] && { eval "$4"; return $code; }
+    [ $# -eq 5 -a  "$5" != '' -a $code -eq 2 ] && { eval "$5"; return $code; }
     return $code
 }
 _ConfirmHelp() {
@@ -198,40 +196,4 @@ _ConfirmHelp() {
     decho '      ans="${type:i:1}"'
     decho '      [ "y" = "$ans" ] && echo YES'
     decho '      [ "N" = "$ans" ] && echo NO'
-    decho ''
-    decho '  [type]の末尾に e を付与すると入力値を`echo`する。'
-    decho '  a=`Confirm`のように受け取らねば不要なechoが表示されるので注意。'
-    decho '  echo: [type]の文字列のうち入力した文字'
-    decho '    例6) ans=`Confirm yN-e どうする？`'
-    decho '         [ "y" = "$ans" ] && echo Yes!!'
-    decho '         [ "N" = "$ans" ] && echo No...'
 }
-#a=`IsQuestionLoop yn y`
-#echo $a
-#ConfirmQuestion yn 質問A
-#ConfirmYesNo "質問文1。"
-#ConfirmYesNo "質問文2。" && echo 'YES!!' || echo 'NO...'
-#ConfirmYesNo "質問文3。" "echo YES!!" "echo NO..." "echo ELSE"
-Confirm 
-#a=`Confirm Yn- "質問文Yn-"`
-#ret=$?
-#echo "入力値: $a $ret"
-Confirm yN- "質問文yN。" "echo YES!!" "echo NO..."
-ConfirmYesNoCancel "質問文YNC"
-a=$?
-[ $a -eq 0 ] && echo 'YES!!'
-[ $a -eq 1 ] && echo 'NO...'
-[ $a -eq 2 ] && echo 'Cancel'
-ConfirmYesNoCancel "質問文3-1。" "echo YES!!" "echo NO..." "echo Cancel"
-Confirm ync- "質問文ync-。" "echo YES!!" "echo NO..." "echo Cancel"
-Confirm yn- "質問文yn-。" "echo YES!!" "echo NO..."
-Confirm oc- "質問文oc-。" "echo OK!!" "echo CANCEL..."
-Confirm o- "質問文o-。" "echo OK!!"
-Confirm ync "質問文ync。" "echo YES!!" "echo NO..." "echo Cancel"
-Confirm yn "質問文yn。" "echo YES!!" "echo NO..."
-Confirm oc "質問文oc。" "echo OK!!" "echo CANCEL..."
-Confirm o "質問文o。" "echo OK!!"
-#Confirm o "質問文o複数行実行文。" "{ echo 'OK1!!'; echo 'OK2!!'}"
-Confirm o "質問文o複数行実行。"
-a=$?
-[ $a -eq 0 ] && { echo 'OK1!!'; echo 'OK2!!'; }
